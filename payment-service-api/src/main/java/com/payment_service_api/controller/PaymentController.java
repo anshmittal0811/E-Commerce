@@ -54,29 +54,28 @@ public class PaymentController {
      */
     @Operation(summary = "View payment page", description = "Displays the payment page with order details")
     @GetMapping("/{orderId}")
-    public String viewPayment(
+    public ResponseEntity<ApiResponse<OrderResponse>> viewPayment(
             @Parameter(description = "Order ID") @PathVariable Long orderId, 
             Model model) {
         log.info("View payment request received for order ID: {}", orderId);
 
         try {
             OrderResponse orderResponse = paymentService.viewOrderDetails(orderId);
-            model.addAttribute("order", orderResponse);
 
             log.debug("Order details loaded for payment view - Order ID: {}, Total: {}",
                     orderId, orderResponse.getTotalAmount());
 
-            return "index";
+            return ResponseEntity.ok(new ApiResponse<>("SUCCESS", "Order details loaded successfully", orderResponse));
 
         } catch (OrderNotFoundException e) {
             log.warn("Order not found for payment view - Order ID: {}", orderId);
-            model.addAttribute("error", e.getMessage());
-            return "error";
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>("ERROR", e.getMessage(), null));
 
         } catch (Exception e) {
             log.error("Error loading payment view for order ID: {}", orderId, e);
-            model.addAttribute("error", "An error occurred while loading order details");
-            return "error";
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("ERROR", "An error occurred while loading order details", null));
         }
     }
 

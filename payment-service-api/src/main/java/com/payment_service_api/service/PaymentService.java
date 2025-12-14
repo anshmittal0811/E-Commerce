@@ -94,8 +94,8 @@ public class PaymentService {
                 .status("SUCCESS")
                 .build();
 
-        // Complete the order via Order Service
-        completeOrder(orderId);
+        // Complete the order via Order Service and get the updated order
+        OrderResponse completedOrder = completeOrder(orderId);
 
         // Save payment to database
         Payment savedPayment;
@@ -109,8 +109,8 @@ public class PaymentService {
             throw new PaymentException("Failed to save payment record", e);
         }
 
-        // Send notification asynchronously via Kafka
-        sendPaymentNotification(orderId, savedPayment);
+        // Send notification asynchronously via Kafka (use completedOrder to avoid re-fetching)
+        sendPaymentNotification(completedOrder, savedPayment);
 
         return savedPayment;
     }
@@ -123,21 +123,20 @@ public class PaymentService {
      * <p>This method is fire-and-forget - failures are logged but
      * do not affect the payment transaction.
      * 
-     * @param orderId the order ID
+     * @param orderResponse the completed order details
      * @param payment the payment entity
      */
-    private void sendPaymentNotification(Long orderId, Payment payment) {
+    private void sendPaymentNotification(OrderResponse orderResponse, Payment payment) {
         try {
-            OrderResponse orderResponse = fetchOrder(orderId);
             PaymentRequest paymentRequest = buildPaymentRequest(orderResponse, payment);
             notificationProducerService.sendPaymentNotification(paymentRequest);
 
-            log.info("Payment notification sent to Kafka for order ID: {}", orderId);
+            log.info("Payment notification sent to Kafka for order ID: {}", orderResponse.getOrderId());
 
         } catch (Exception e) {
             // Log error but don't fail the transaction - notification is secondary
             log.error("Failed to send payment notification for order ID: {} - {}",
-                    orderId, e.getMessage(), e);
+                    orderResponse.getOrderId(), e.getMessage(), e);
         }
     }
 
@@ -184,20 +183,23 @@ public class PaymentService {
      * Completes an order via the Order Service and handles the API response.
      * 
      * @param orderId the order ID to complete
+     * @return the completed order details
      * @throws OrderNotFoundException if the order does not exist
      * @throws PaymentException if communication with Order Service fails
      */
-    private void completeOrder(Long orderId) {
+    private OrderResponse completeOrder(Long orderId) {
         try {
             ApiResponse<OrderResponse> response = orderServiceClient.completeOrder(orderId);
 
-            if (response == null || !response.isSuccess()) {
+            if (response == null || !response.isSuccess() || response.getData() == null) {
                 String errorMsg = response != null ? response.getMessage() : "Unknown error";
                 log.error("Failed to complete order ID: {} - {}", orderId, errorMsg);
                 throw new PaymentException("Failed to complete order: " + errorMsg);
             }
 
             log.debug("Order status updated to COMPLETED for order ID: {}", orderId);
+
+            return response.getData();
 
         } catch (PaymentException e) {
             throw e;
