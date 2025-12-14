@@ -5,12 +5,37 @@ import org.springframework.web.bind.annotation.*;
 
 import com.payment_service_api.dto.OrderResponse;
 
+/**
+ * Feign client for communicating with the Order Service API.
+ * 
+ * <p>This client provides methods to:
+ * <ul>
+ *   <li>Retrieve order details for payment processing</li>
+ *   <li>Update order status to COMPLETED after payment</li>
+ * </ul>
+ * 
+ * <p>Uses service discovery via Eureka to locate the order-service-api.
+ */
 @FeignClient(name = "order-service-api")
 public interface OrderServiceClient {
 
+    /**
+     * Retrieves order details by order ID.
+     * 
+     * <p>Also updates the order status to PROCESSING.
+     * 
+     * @param orderId the order ID to retrieve
+     * @return the order details
+     */
     @GetMapping("/orders/bring/{orderId}")
     OrderResponse bringOrder(@PathVariable Long orderId);
 
+    /**
+     * Marks an order as completed after successful payment.
+     * 
+     * @param orderId the order ID to complete
+     * @return the updated order details
+     */
     @PostMapping("/orders/complete/{orderId}")
     OrderResponse completeOrder(@PathVariable Long orderId);
 
