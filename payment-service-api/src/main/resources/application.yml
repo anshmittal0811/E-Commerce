@@ -23,3 +23,15 @@ eureka:
   client:
     serviceUrl:
       defaultZone: http://eureka-service-api:8761/eureka/
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operationsSorter: method
+    tagsSorter: alpha
+    tryItOutEnabled: true
+  show-actuator: false

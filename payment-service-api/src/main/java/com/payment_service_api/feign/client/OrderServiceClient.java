@@ -3,6 +3,7 @@ package com.payment_service_api.feign.client;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
+import com.payment_service_api.dto.ApiResponse;
 import com.payment_service_api.dto.OrderResponse;
 
 /**
@@ -15,6 +16,9 @@ import com.payment_service_api.dto.OrderResponse;
  * </ul>
  * 
  * <p>Uses service discovery via Eureka to locate the order-service-api.
+ * 
+ * <p>Note: All responses are wrapped in ApiResponse as per the standard
+ * response format used by internal microservices.
  */
 @FeignClient(name = "order-service-api")
 public interface OrderServiceClient {
@@ -25,18 +29,18 @@ public interface OrderServiceClient {
      * <p>Also updates the order status to PROCESSING.
      * 
      * @param orderId the order ID to retrieve
-     * @return the order details
+     * @return the API response containing order details
      */
     @GetMapping("/orders/bring/{orderId}")
-    OrderResponse bringOrder(@PathVariable Long orderId);
+    ApiResponse<OrderResponse> bringOrder(@PathVariable Long orderId);
 
     /**
      * Marks an order as completed after successful payment.
      * 
      * @param orderId the order ID to complete
-     * @return the updated order details
+     * @return the API response containing updated order details
      */
     @PostMapping("/orders/complete/{orderId}")
-    OrderResponse completeOrder(@PathVariable Long orderId);
+    ApiResponse<OrderResponse> completeOrder(@PathVariable Long orderId);
 
 }

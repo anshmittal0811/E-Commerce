@@ -32,6 +32,15 @@ import com.order_service_api.filter.HeaderAuthenticationFilter;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private static final String[] SWAGGER_ENDPOINTS = {
+        "/swagger-ui.html",
+        "/swagger-ui/**",
+        "/v3/api-docs/**",
+        "/v3/api-docs.yaml",
+        "/swagger-resources/**",
+        "/webjars/**"
+    };
+
     private final HeaderAuthenticationFilter headerAuthenticationFilter;
 
     /**
@@ -40,7 +49,8 @@ public class SecurityConfig {
      * <p>This method sets up:
      * <ul>
      *   <li>CSRF disabled (stateless API)</li>
-     *   <li>All requests require authentication</li>
+     *   <li>Public access to Swagger/OpenAPI documentation endpoints</li>
+     *   <li>All other requests require authentication</li>
      *   <li>Header authentication filter before username/password filter</li>
      * </ul>
      * 
@@ -53,8 +63,9 @@ public class SecurityConfig {
         http
             // Disable CSRF for stateless API
             .csrf(AbstractHttpConfigurer::disable)
-            // Require authentication for all requests
+            // Configure authorization
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(SWAGGER_ENDPOINTS).permitAll()
                 .anyRequest().authenticated()
             );
 

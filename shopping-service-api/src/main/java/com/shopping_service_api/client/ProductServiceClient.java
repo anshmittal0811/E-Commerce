@@ -3,6 +3,7 @@ package com.shopping_service_api.client;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
+import com.shopping_service_api.dto.ApiResponse;
 import com.shopping_service_api.dto.ProductResponse;
 
 /**
@@ -15,6 +16,9 @@ import com.shopping_service_api.dto.ProductResponse;
  * </ul>
  * 
  * <p>Uses service discovery via Eureka to locate the product-service-api.
+ * 
+ * <p>Note: All responses are wrapped in ApiResponse as per the standard
+ * response format used by internal microservices.
  */
 @FeignClient(name = "product-service-api")
 public interface ProductServiceClient {
@@ -23,19 +27,19 @@ public interface ProductServiceClient {
      * Retrieves a product by its unique identifier.
      * 
      * @param idProduct the product ID to retrieve
-     * @return the product details, or null if not found
+     * @return the API response containing product details
      */
     @GetMapping("/product/{idProduct}")
-    ProductResponse findProductById(@PathVariable("idProduct") Long idProduct);
+    ApiResponse<ProductResponse> findProductById(@PathVariable("idProduct") Long idProduct);
 
     /**
      * Updates the stock quantity for a specific product.
      * 
      * @param idProduct the product ID to update
      * @param quantity the quantity to deduct from stock
-     * @return the updated product details
+     * @return the API response containing updated product details
      */
     @PutMapping("/product/update/stock/{idProduct}")
-    ProductResponse updateStockProduct(@PathVariable("idProduct") Long idProduct, @RequestBody Integer quantity);
+    ApiResponse<ProductResponse> updateStockProduct(@PathVariable("idProduct") Long idProduct, @RequestBody Integer quantity);
 
 }

@@ -29,6 +29,15 @@ import com.product_service_api.filter.HeaderAuthenticationFilter;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private static final String[] SWAGGER_ENDPOINTS = {
+        "/swagger-ui.html",
+        "/swagger-ui/**",
+        "/v3/api-docs/**",
+        "/v3/api-docs.yaml",
+        "/swagger-resources/**",
+        "/webjars/**"
+    };
+
     /**
      * Custom authentication filter that extracts user credentials from HTTP headers.
      */
@@ -40,7 +49,8 @@ public class SecurityConfig {
      * <p>This configuration:
      * <ul>
      *   <li>Disables CSRF protection for stateless REST API</li>
-     *   <li>Requires authentication for all requests</li>
+     *   <li>Allows public access to Swagger/OpenAPI documentation</li>
+     *   <li>Requires authentication for all other requests</li>
      *   <li>Adds custom header authentication filter before username/password filter</li>
      * </ul>
      * 
@@ -52,6 +62,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(SWAGGER_ENDPOINTS).permitAll()
                 .anyRequest().authenticated()
             );
 

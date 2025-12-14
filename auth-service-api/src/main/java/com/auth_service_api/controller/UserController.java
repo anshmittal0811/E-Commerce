@@ -2,6 +2,11 @@ package com.auth_service_api.controller;
 
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -29,6 +34,8 @@ import com.auth_service_api.service.UserService;
 @RequestMapping("/users")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Users", description = "User management endpoints")
+@SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
     private final UserService userService;
@@ -41,6 +48,11 @@ public class UserController {
      * 
      * @return ResponseEntity containing a list of all users, or an empty list if no users exist
      */
+    @Operation(summary = "Get all users", description = "Retrieves all users from the system (Admin only)")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Users retrieved"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+    })
     @GetMapping("/admin/users")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<User>> getAllUsers() {
@@ -69,8 +81,14 @@ public class UserController {
      * @return ResponseEntity containing the user if found
      * @throws UserNotFoundException if no user exists with the provided ID
      */
+    @Operation(summary = "Get user by ID", description = "Retrieves a specific user by their ID")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User found"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found")
+    })
     @GetMapping("/client/user/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+    public ResponseEntity<User> getUserById(
+            @Parameter(description = "User ID") @PathVariable Long id) {
         log.info("Client requesting user with ID: {}", id);
 
         try {
@@ -103,6 +121,7 @@ public class UserController {
      * 
      * @return true if the user has ADMIN role, false otherwise
      */
+    @Operation(summary = "Verify admin role", description = "Verifies that the current user has ADMIN role")
     @GetMapping("/admin/verification")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Boolean> isAdmin() {
@@ -118,6 +137,7 @@ public class UserController {
      * 
      * @return true if the user has CLIENT role, false otherwise
      */
+    @Operation(summary = "Verify client role", description = "Verifies that the current user has CLIENT role")
     @GetMapping("/client/verification")
     @PreAuthorize("hasAuthority('CLIENT')")
     public ResponseEntity<Boolean> isClient() {
@@ -133,6 +153,7 @@ public class UserController {
      * 
      * @return true if the user has CLIENT or ADMIN role, false otherwise
      */
+    @Operation(summary = "Verify user role", description = "Verifies that the current user has CLIENT or ADMIN role")
     @GetMapping("/user/verification")
     @PreAuthorize("hasAnyAuthority('CLIENT','ADMIN')")
     public ResponseEntity<Boolean> isUser() {

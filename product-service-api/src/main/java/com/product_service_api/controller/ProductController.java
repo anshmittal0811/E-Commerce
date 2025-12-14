@@ -5,6 +5,11 @@ import java.util.List;
 import com.product_service_api.exception.ProductNotFoundException;
 import com.product_service_api.exception.ProductOperationException;
 import com.product_service_api.model.CurrentUser;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +40,8 @@ import com.product_service_api.service.ProductService;
 @RequestMapping("/product")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Products", description = "Product catalog management endpoints")
+@SecurityRequirement(name = "bearerAuth")
 public class ProductController {
 
     private final ProductService productService;
@@ -46,6 +53,11 @@ public class ProductController {
      * 
      * @return ResponseEntity containing the list of all products or error message
      */
+    @Operation(summary = "Get all products", description = "Retrieves all available products from the catalog")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Products retrieved"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @GetMapping
     @PreAuthorize("hasAuthority('CLIENT')")
     public ResponseEntity<ApiResponse<List<Product>>> findAllProducts() {
@@ -82,10 +94,16 @@ public class ProductController {
      * @param quantity the quantity to reduce from stock
      * @return ResponseEntity containing the updated product or error message
      */
+    @Operation(summary = "Update product stock", description = "Updates the stock quantity for a specific product")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Stock updated"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Product not found"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request")
+    })
     @PutMapping("/update/stock/{idProduct}")
     @PreAuthorize("hasAuthority('CLIENT')")
     public ResponseEntity<ApiResponse<Product>> updateStockProduct(
-            @PathVariable("idProduct") Long idProduct,
+            @Parameter(description = "Product ID") @PathVariable("idProduct") Long idProduct,
             @RequestBody Integer quantity) {
 
         log.info("Update stock request received for product ID: {} with quantity: {}", idProduct, quantity);
@@ -137,6 +155,12 @@ public class ProductController {
      * @param product the product entity to save
      * @return ResponseEntity containing the saved product or error message
      */
+    @Operation(summary = "Save a new product", description = "Adds a new product to the catalog (Admin only)")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Product saved"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid product data"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+    })
     @PostMapping("/save")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<Product>> saveProduct(@RequestBody Product product) {
@@ -189,6 +213,12 @@ public class ProductController {
      * @param products the list of product entities to save
      * @return ResponseEntity containing the list of saved products or error message
      */
+    @Operation(summary = "Bulk save products", description = "Adds multiple products to the catalog (Admin only)")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Products saved"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid product data"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+    })
     @PostMapping("/save/list")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<List<Product>>> saveListProducts(@RequestBody List<Product> products) {
@@ -230,10 +260,15 @@ public class ProductController {
      * @param idProduct the unique identifier of the product to retrieve
      * @return ResponseEntity containing the product or error message
      */
+    @Operation(summary = "Get product by ID", description = "Retrieves a single product by its ID")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Product found"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Product not found")
+    })
     @GetMapping("/{idProduct}")
     public ResponseEntity<ApiResponse<Product>> findProductById(
             HttpServletRequest request,
-            @PathVariable("idProduct") Long idProduct) {
+            @Parameter(description = "Product ID") @PathVariable("idProduct") Long idProduct) {
 
         log.info("Get product request received for ID: {}", idProduct);
 

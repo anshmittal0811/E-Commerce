@@ -39,6 +39,14 @@ import com.auth_service_api.filter.HeaderAuthenticationFilter;
 public class SecurityConfig {
 
     private static final String AUTH_ENDPOINTS = "/auth/**";
+    private static final String[] SWAGGER_ENDPOINTS = {
+        "/swagger-ui.html",
+        "/swagger-ui/**",
+        "/v3/api-docs/**",
+        "/v3/api-docs.yaml",
+        "/swagger-resources/**",
+        "/webjars/**"
+    };
 
     private final HeaderAuthenticationFilter headerAuthenticationFilter;
 
@@ -49,6 +57,7 @@ public class SecurityConfig {
      * <ul>
      *   <li>CSRF protection disabled (stateless API with JWT tokens)</li>
      *   <li>Public access to authentication endpoints ({@code /auth/**})</li>
+     *   <li>Public access to Swagger/OpenAPI documentation endpoints</li>
      *   <li>Authentication required for all other endpoints</li>
      *   <li>Custom header authentication filter added before default authentication filter</li>
      * </ul>
@@ -64,6 +73,7 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers(AUTH_ENDPOINTS).permitAll()
+                    .requestMatchers(SWAGGER_ENDPOINTS).permitAll()
                     .anyRequest().authenticated()
             );
 

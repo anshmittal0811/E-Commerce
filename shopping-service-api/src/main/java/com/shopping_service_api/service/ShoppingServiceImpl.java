@@ -2,6 +2,7 @@ package com.shopping_service_api.service;
 
 import java.util.ArrayList;
 
+import com.shopping_service_api.dto.ApiResponse;
 import com.shopping_service_api.exception.CartNotFoundException;
 import com.shopping_service_api.exception.CartOperationException;
 import com.shopping_service_api.exception.ProductNotFoundException;
@@ -67,16 +68,17 @@ public class ShoppingServiceImpl implements ShoppingService {
                 idUser, idProduct, quantity);
 
         // Fetch and validate product
-        ProductResponse product = productServiceClient.findProductById(idProduct);
-        if (product == null) {
-            log.warn("Product not found with ID: {}", idProduct);
-            throw new ProductNotFoundException(idProduct);
-        }
+        ProductResponse product = fetchProduct(idProduct);
 
         log.debug("Product found: {} (Stock: {})", product.getName(), product.getStock());
 
         // Validate stock availability
         Integer stock = product.getStock();
+        if (stock == null) {
+            log.warn("Stock information unavailable for product ID: {}", idProduct);
+            throw new CartOperationException(
+                    String.format("Stock information unavailable for product '%s'", product.getName()));
+        }
         if (stock < quantity) {
             log.warn("Insufficient stock for product ID: {}. Available: {}, Requested: {}",
                     idProduct, stock, quantity);
@@ -132,8 +134,15 @@ public class ShoppingServiceImpl implements ShoppingService {
 
         // Update product stock
         try {
-            productServiceClient.updateStockProduct(idProduct, quantity);
+            ApiResponse<ProductResponse> stockResponse = productServiceClient.updateStockProduct(idProduct, quantity);
+            if (stockResponse == null || !stockResponse.isSuccess()) {
+                String errorMsg = stockResponse != null ? stockResponse.getMessage() : "Unknown error";
+                log.error("Failed to update product stock for product ID: {} - {}", idProduct, errorMsg);
+                throw new CartOperationException("Failed to update product stock: " + errorMsg);
+            }
             log.debug("Product stock updated successfully for product ID: {}", idProduct);
+        } catch (CartOperationException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Failed to update product stock for product ID: {}", idProduct, e);
             throw new CartOperationException("Failed to update product stock", e);
@@ -248,6 +257,29 @@ public class ShoppingServiceImpl implements ShoppingService {
     }
 
     // ==================== Private Helper Methods ====================
+
+    /**
+     * Fetches a product from the Product Service and unwraps the API response.
+     * 
+     * @param idProduct the product ID to fetch
+     * @return the product response
+     * @throws ProductNotFoundException if the product does not exist or response is invalid
+     */
+    private ProductResponse fetchProduct(Long idProduct) {
+        ApiResponse<ProductResponse> response = productServiceClient.findProductById(idProduct);
+
+        if (response == null) {
+            log.warn("Null response from Product Service for product ID: {}", idProduct);
+            throw new ProductNotFoundException(idProduct);
+        }
+
+        if (!response.isSuccess() || response.getData() == null) {
+            log.warn("Product not found with ID: {} - {}", idProduct, response.getMessage());
+            throw new ProductNotFoundException(idProduct);
+        }
+
+        return response.getData();
+    }
 
     /**
      * Calculates the total price of all items in the cart.

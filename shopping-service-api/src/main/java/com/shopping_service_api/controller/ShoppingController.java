@@ -6,6 +6,10 @@ import com.shopping_service_api.exception.ProductNotFoundException;
 import com.shopping_service_api.exception.UserNotFoundException;
 import com.shopping_service_api.model.CurrentUser;
 import com.shopping_service_api.dto.ProductRequest;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +38,8 @@ import com.shopping_service_api.service.ShoppingService;
 @RequestMapping("/shopping")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Shopping Cart", description = "Shopping cart management endpoints")
+@SecurityRequirement(name = "bearerAuth")
 public class ShoppingController {
 
     private final ShoppingService shoppingService;
@@ -49,6 +55,12 @@ public class ShoppingController {
      * @param productRequest the product ID and quantity to add
      * @return ResponseEntity containing the updated cart or error message
      */
+    @Operation(summary = "Add product to cart", description = "Adds a product to the authenticated user's shopping cart")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Product added to cart"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Product or user not found"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request")
+    })
     @PostMapping("/add-to-cart")
     public ResponseEntity<ApiResponse<Cart>> addToCart(
             Authentication auth,
@@ -125,6 +137,12 @@ public class ShoppingController {
      * @param productRequest the product ID to remove
      * @return ResponseEntity containing the updated cart or error message
      */
+    @Operation(summary = "Remove product from cart", description = "Removes a product from the authenticated user's shopping cart")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Product removed from cart"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Cart not found"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request")
+    })
     @DeleteMapping("/remove-from-cart")
     public ResponseEntity<ApiResponse<Cart>> removeFromCart(
             Authentication auth,
@@ -185,6 +203,11 @@ public class ShoppingController {
      * @param request the HTTP request containing user headers
      * @return ResponseEntity containing the cart or error message
      */
+    @Operation(summary = "Get shopping cart", description = "Retrieves the current shopping cart for the authenticated user")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Cart retrieved"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Cart not found")
+    })
     @GetMapping("/send-cart")
     public ResponseEntity<ApiResponse<Cart>> sendCart(Authentication auth, HttpServletRequest request) {
         CurrentUser user = buildCurrentUser(auth, request);
@@ -228,6 +251,11 @@ public class ShoppingController {
      * @param request the HTTP request containing user headers
      * @return ResponseEntity with success message or error
      */
+    @Operation(summary = "Clear shopping cart", description = "Removes all items from the authenticated user's shopping cart")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Cart cleared"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Cart not found")
+    })
     @GetMapping("/clear-cart")
     public ResponseEntity<ApiResponse<Void>> clearCart(Authentication auth, HttpServletRequest request) {
         CurrentUser user = buildCurrentUser(auth, request);

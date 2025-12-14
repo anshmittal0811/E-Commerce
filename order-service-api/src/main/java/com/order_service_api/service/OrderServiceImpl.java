@@ -14,6 +14,7 @@ import org.springframework.util.StringUtils;
 
 import com.order_service_api.client.ShopServiceClient;
 import com.order_service_api.client.UserServiceClient;
+import com.order_service_api.dto.ApiResponse;
 import com.order_service_api.dto.CartResponse;
 import com.order_service_api.dto.OrderResponse;
 import com.order_service_api.dto.UserResponse;
@@ -81,9 +82,9 @@ public class OrderServiceImpl implements OrderService {
         try {
             // Retrieve cart from shop service
             log.debug("Fetching cart for user ID: {}", idUser);
-            CartResponse cart = shopServiceClient.sendCart();
+            CartResponse cart = fetchCart(idUser);
 
-            if (cart == null || cart.getCartItems() == null || cart.getCartItems().isEmpty()) {
+            if (cart.getCartItems() == null || cart.getCartItems().isEmpty()) {
                 log.warn("Order creation failed: Cart is empty for user ID: {}", idUser);
                 throw new OrderCreationException("Cannot create order: Cart is empty");
             }
@@ -126,7 +127,7 @@ public class OrderServiceImpl implements OrderService {
             log.debug("Order persisted with ID: {}", savedOrder.getOrderId());
 
             // Clean cart after successful order creation
-            shopServiceClient.cleanCart();
+            clearCart(idUser);
             log.debug("Cart cleaned for user ID: {}", idUser);
 
             log.info("Order successfully created with ID: {} for user ID: {}, total amount: {}", 
@@ -376,6 +377,49 @@ public class OrderServiceImpl implements OrderService {
      */
     private double roundToTwoDecimals(double value) {
         return Math.round(value * ROUNDING_FACTOR) / ROUNDING_FACTOR;
+    }
+
+    /**
+     * Fetches the cart from the Shopping Service and unwraps the API response.
+     * 
+     * @param idUser the user ID for logging purposes
+     * @return the cart response
+     * @throws OrderCreationException if the cart cannot be retrieved
+     */
+    private CartResponse fetchCart(Long idUser) {
+        ApiResponse<CartResponse> response = shopServiceClient.sendCart();
+
+        if (response == null) {
+            log.warn("Null response from Shopping Service for user ID: {}", idUser);
+            throw new OrderCreationException("Cannot create order: Failed to retrieve cart");
+        }
+
+        if (!response.isSuccess() || response.getData() == null) {
+            log.warn("Failed to retrieve cart for user ID: {} - {}", idUser, response.getMessage());
+            throw new OrderCreationException("Cannot create order: " + response.getMessage());
+        }
+
+        return response.getData();
+    }
+
+    /**
+     * Clears the cart via the Shopping Service and handles the API response.
+     * 
+     * @param idUser the user ID for logging purposes
+     */
+    private void clearCart(Long idUser) {
+        try {
+            ApiResponse<Void> response = shopServiceClient.cleanCart();
+
+            if (response == null || !response.isSuccess()) {
+                String errorMsg = response != null ? response.getMessage() : "Unknown error";
+                log.warn("Failed to clear cart for user ID: {} - {}", idUser, errorMsg);
+                // Log warning but don't fail - order was already created
+            }
+        } catch (Exception e) {
+            log.warn("Error clearing cart for user ID: {} - {}", idUser, e.getMessage());
+            // Log warning but don't fail - order was already created
+        }
     }
 
 }

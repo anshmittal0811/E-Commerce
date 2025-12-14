@@ -1,5 +1,10 @@
 package com.payment_service_api.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -31,6 +36,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/payment")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Payments", description = "Payment processing endpoints")
+@SecurityRequirement(name = "bearerAuth")
 public class PaymentController {
 
     private final PaymentService paymentService;
@@ -45,8 +52,11 @@ public class PaymentController {
      * @param model the Spring MVC model for view rendering
      * @return the view name for the payment page
      */
+    @Operation(summary = "View payment page", description = "Displays the payment page with order details")
     @GetMapping("/{orderId}")
-    public String viewPayment(@PathVariable Long orderId, Model model) {
+    public String viewPayment(
+            @Parameter(description = "Order ID") @PathVariable Long orderId, 
+            Model model) {
         log.info("View payment request received for order ID: {}", orderId);
 
         try {
@@ -88,13 +98,19 @@ public class PaymentController {
      * @param description optional payment description
      * @return ResponseEntity containing the payment result or error
      */
+    @Operation(summary = "Create payment", description = "Creates and processes a payment for an order")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Payment processed successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid payment data"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Order not found")
+    })
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<Payment>> createPayment(
-            @RequestParam("orderid") Long orderId,
-            @RequestParam("method") String method,
-            @RequestParam("amount") String amount,
-            @RequestParam("currency") String currency,
-            @RequestParam("description") String description) {
+            @Parameter(description = "Order ID") @RequestParam("orderid") Long orderId,
+            @Parameter(description = "Payment method (e.g., CARD, PAYPAL)") @RequestParam("method") String method,
+            @Parameter(description = "Payment amount") @RequestParam("amount") String amount,
+            @Parameter(description = "Currency code (e.g., USD, EUR)") @RequestParam("currency") String currency,
+            @Parameter(description = "Payment description") @RequestParam("description") String description) {
 
         log.info("Create payment request received - Order ID: {}, Method: {}, Amount: {}, Currency: {}",
                 orderId, method, amount, currency);

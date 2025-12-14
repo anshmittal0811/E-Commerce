@@ -1,5 +1,10 @@
 package com.auth_service_api.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -29,6 +34,7 @@ import com.auth_service_api.service.AuthService;
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Authentication", description = "Authentication and registration endpoints")
 public class AuthController {
 
     private final AuthService authService;
@@ -42,6 +48,25 @@ public class AuthController {
      * @param registerRequest the registration request containing user details (name, email, password, role, etc.)
      * @return ResponseEntity containing a success message
      */
+    @Operation(
+        summary = "Register a new user",
+        description = "Creates a new user account with the provided details. Email must be unique."
+    )
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "201",
+            description = "User registered successfully",
+            content = @Content(schema = @Schema(implementation = ApiResponse.class))
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "409",
+            description = "Email already exists"
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "400",
+            description = "Invalid request data"
+        )
+    })
     @PostMapping("/register")
     public ResponseEntity<ApiResponse> register(@RequestBody RegisterRequest registerRequest) {
         if (registerRequest == null) {
@@ -86,6 +111,25 @@ public class AuthController {
      * @param loginRequest the login request containing email and password
      * @return ResponseEntity containing the JWT token and success message
      */
+    @Operation(
+        summary = "User login",
+        description = "Authenticates a user with email and password, returns a JWT token on success"
+    )
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "Login successful",
+            content = @Content(schema = @Schema(implementation = LoginResponse.class))
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "401",
+            description = "Invalid credentials"
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "400",
+            description = "Invalid request data"
+        )
+    })
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
         if (loginRequest == null) {

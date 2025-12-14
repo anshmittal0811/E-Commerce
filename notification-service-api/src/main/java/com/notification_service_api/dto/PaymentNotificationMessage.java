@@ -12,8 +12,9 @@ import java.time.LocalDateTime;
  * This class matches the structure of PaymentRequest sent by
  * the Payment Service producer.
  */
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class PaymentNotificationMessage {
 
     /**

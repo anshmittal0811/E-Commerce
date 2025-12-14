@@ -31,17 +31,28 @@ spring:
   kafka:
     bootstrap-servers: kafka:9092
     consumer:
-      group-id: notification-service-group
-      auto-offset-reset: earliest
+      group-id: notification-service-group-v2
+      auto-offset-reset: latest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: com.notification_service_api.dto.PaymentNotificationMessage
 
 eureka:
   client:
     serviceUrl:
       defaultZone: http://eureka-service-api:8761/eureka/
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operationsSorter: method
+    tagsSorter: alpha
+    tryItOutEnabled: true
+  show-actuator: false

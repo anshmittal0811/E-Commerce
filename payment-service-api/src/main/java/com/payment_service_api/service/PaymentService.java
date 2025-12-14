@@ -3,6 +3,7 @@ package com.payment_service_api.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.payment_service_api.dto.ApiResponse;
 import com.payment_service_api.dto.OrderResponse;
 import com.payment_service_api.dto.PaymentRequest;
 import com.payment_service_api.entity.Payment;
@@ -50,28 +51,7 @@ public class PaymentService {
     @Transactional(readOnly = true)
     public OrderResponse viewOrderDetails(Long orderId) {
         log.debug("Fetching order details for order ID: {}", orderId);
-
-        try {
-            OrderResponse orderResponse = orderServiceClient.bringOrder(orderId);
-
-            if (orderResponse == null) {
-                log.warn("Order not found with ID: {}", orderId);
-                throw new OrderNotFoundException(orderId);
-            }
-
-            log.debug("Order details retrieved - Order ID: {}, Status: {}, Total: {}",
-                    orderId, orderResponse.getOrderStatus(), orderResponse.getTotalAmount());
-
-            return orderResponse;
-
-        } catch (FeignException.NotFound e) {
-            log.warn("Order not found via Order Service - Order ID: {}", orderId);
-            throw new OrderNotFoundException(orderId);
-
-        } catch (FeignException e) {
-            log.error("Error communicating with Order Service for order ID: {}", orderId, e);
-            throw new PaymentException("Failed to retrieve order details", e);
-        }
+        return fetchOrder(orderId);
     }
 
     /**
@@ -115,18 +95,7 @@ public class PaymentService {
                 .build();
 
         // Complete the order via Order Service
-        try {
-            orderServiceClient.completeOrder(orderId);
-            log.debug("Order status updated to COMPLETED for order ID: {}", orderId);
-
-        } catch (FeignException.NotFound e) {
-            log.error("Order not found while completing - Order ID: {}", orderId);
-            throw new OrderNotFoundException(orderId);
-
-        } catch (FeignException e) {
-            log.error("Failed to complete order via Order Service - Order ID: {}", orderId, e);
-            throw new PaymentException("Failed to complete order", e);
-        }
+        completeOrder(orderId);
 
         // Save payment to database
         Payment savedPayment;
@@ -159,7 +128,7 @@ public class PaymentService {
      */
     private void sendPaymentNotification(Long orderId, Payment payment) {
         try {
-            OrderResponse orderResponse = orderServiceClient.bringOrder(orderId);
+            OrderResponse orderResponse = fetchOrder(orderId);
             PaymentRequest paymentRequest = buildPaymentRequest(orderResponse, payment);
             notificationProducerService.sendPaymentNotification(paymentRequest);
 
@@ -169,6 +138,75 @@ public class PaymentService {
             // Log error but don't fail the transaction - notification is secondary
             log.error("Failed to send payment notification for order ID: {} - {}",
                     orderId, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Fetches order details from the Order Service and unwraps the API response.
+     * 
+     * @param orderId the order ID to fetch
+     * @return the order response
+     * @throws OrderNotFoundException if the order does not exist
+     * @throws PaymentException if communication with Order Service fails
+     */
+    private OrderResponse fetchOrder(Long orderId) {
+        try {
+            ApiResponse<OrderResponse> response = orderServiceClient.bringOrder(orderId);
+
+            if (response == null) {
+                log.warn("Null response from Order Service for order ID: {}", orderId);
+                throw new OrderNotFoundException(orderId);
+            }
+
+            if (!response.isSuccess() || response.getData() == null) {
+                log.warn("Order not found with ID: {} - {}", orderId, response.getMessage());
+                throw new OrderNotFoundException(orderId);
+            }
+
+            OrderResponse order = response.getData();
+            log.debug("Order details retrieved - Order ID: {}, Status: {}, Total: {}",
+                    orderId, order.getOrderStatus(), order.getTotalAmount());
+
+            return order;
+
+        } catch (OrderNotFoundException e) {
+            throw e;
+        } catch (FeignException.NotFound e) {
+            log.warn("Order not found via Order Service - Order ID: {}", orderId);
+            throw new OrderNotFoundException(orderId);
+        } catch (FeignException e) {
+            log.error("Error communicating with Order Service for order ID: {}", orderId, e);
+            throw new PaymentException("Failed to retrieve order details", e);
+        }
+    }
+
+    /**
+     * Completes an order via the Order Service and handles the API response.
+     * 
+     * @param orderId the order ID to complete
+     * @throws OrderNotFoundException if the order does not exist
+     * @throws PaymentException if communication with Order Service fails
+     */
+    private void completeOrder(Long orderId) {
+        try {
+            ApiResponse<OrderResponse> response = orderServiceClient.completeOrder(orderId);
+
+            if (response == null || !response.isSuccess()) {
+                String errorMsg = response != null ? response.getMessage() : "Unknown error";
+                log.error("Failed to complete order ID: {} - {}", orderId, errorMsg);
+                throw new PaymentException("Failed to complete order: " + errorMsg);
+            }
+
+            log.debug("Order status updated to COMPLETED for order ID: {}", orderId);
+
+        } catch (PaymentException e) {
+            throw e;
+        } catch (FeignException.NotFound e) {
+            log.error("Order not found while completing - Order ID: {}", orderId);
+            throw new OrderNotFoundException(orderId);
+        } catch (FeignException e) {
+            log.error("Failed to complete order via Order Service - Order ID: {}", orderId, e);
+            throw new PaymentException("Failed to complete order", e);
         }
     }
 

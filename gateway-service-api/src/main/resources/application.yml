@@ -67,42 +67,6 @@ spring:
             - Path=/api/notifications/**
           filters:
             - StripPrefix=1
-
-
-        - id: user-service-api-swagger
-          uri: lb://USER-SERVICE-API
-          predicates:
-            - Path=/api/users/swagger-ui.html, /api/users/swagger-ui/**, /api/users/v3/api-docs
-          filters:
-            - StripPrefix=1
-
-        - id: product-service-api-swagger
-          uri: lb://PRODUCT-SERVICE-API
-          predicates:
-            - Path=/api/product/swagger-ui.html, /api/product/swagger-ui/**, /api/product/v3/api-docs
-          filters:
-            - StripPrefix=1
-
-        - id: shopping-service-api-swagger
-          uri: lb://SHOPPING-SERVICE-API
-          predicates:
-            - Path=/api/shopping/swagger-ui.html, /api/shopping/swagger-ui/**, /api/shopping/v3/api-docs
-          filters:
-            - StripPrefix=1
-
-        - id: order-service-api-swagger
-          uri: lb://ORDER-SERVICE-API
-          predicates:
-            - Path=/api/order/swagger-ui.html, /api/order/swagger-ui/**, /api/order/v3/api-docs
-          filters:
-            - StripPrefix=1
-
-        - id: notification-service-api-swagger
-          uri: lb://NOTIFICATION-SERVICE-API
-          predicates:
-            - Path=/api/notification/swagger-ui.html, /api/notification/swagger-ui/**, /api/notification/v3/api-docs
-          filters:
-            - StripPrefix=1
         
 jwt:
   secret: 3E3U3HR23GR627GR27723RY23IJR923R2379HRRJK934
@@ -112,3 +76,23 @@ eureka:
   client:
     serviceUrl:
       defaultZone: http://eureka-service-api:8761/eureka/
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    urls:
+      - name: Auth Service
+        url: /v3/api-docs/auth
+      - name: Product Service
+        url: /v3/api-docs/product
+      - name: Shopping Service
+        url: /v3/api-docs/shopping
+      - name: Order Service
+        url: /v3/api-docs/order
+      - name: Payment Service
+        url: /v3/api-docs/payment
+      - name: Notification Service
+        url: /v3/api-docs/notification

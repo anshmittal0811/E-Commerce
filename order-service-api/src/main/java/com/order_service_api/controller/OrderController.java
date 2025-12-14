@@ -2,6 +2,11 @@ package com.order_service_api.controller;
 
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +41,8 @@ import com.order_service_api.service.OrderService;
 @RequestMapping("/orders")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Orders", description = "Order management endpoints")
+@SecurityRequirement(name = "bearerAuth")
 public class OrderController {
 
     private final OrderService orderService;
@@ -50,6 +57,15 @@ public class OrderController {
      * @param request the HTTP request containing user headers
      * @return ResponseEntity containing the created order or error message
      */
+    @Operation(
+        summary = "Create a new order",
+        description = "Creates a new order from the authenticated user's shopping cart"
+    )
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Order created successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request or empty cart"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<Order>> createOrder(Authentication auth, HttpServletRequest request) {
         CurrentUser user = buildCurrentUser(auth, request);
@@ -97,8 +113,17 @@ public class OrderController {
      * @param orderId the unique identifier of the order to process
      * @return ResponseEntity containing the updated order or error message
      */
+    @Operation(
+        summary = "Process an order",
+        description = "Updates an order status to PROCESSING"
+    )
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Order status updated"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Order not found")
+    })
     @GetMapping("/bring/{orderId}")
-    public ResponseEntity<ApiResponse<Order>> bringOrder(@PathVariable Long orderId) {
+    public ResponseEntity<ApiResponse<Order>> bringOrder(
+            @Parameter(description = "Order ID") @PathVariable Long orderId) {
         log.info("Bring order request received for order ID: {}", orderId);
 
         try {
@@ -133,8 +158,17 @@ public class OrderController {
      * @param orderId the unique identifier of the order to complete
      * @return ResponseEntity containing the updated order or error message
      */
+    @Operation(
+        summary = "Complete an order",
+        description = "Updates an order status to COMPLETED"
+    )
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Order completed"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Order not found")
+    })
     @PostMapping("/complete/{orderId}")
-    public ResponseEntity<ApiResponse<Order>> completeOrder(@PathVariable Long orderId) {
+    public ResponseEntity<ApiResponse<Order>> completeOrder(
+            @Parameter(description = "Order ID") @PathVariable Long orderId) {
         log.info("Complete order request received for order ID: {}", orderId);
 
         try {
@@ -169,9 +203,18 @@ public class OrderController {
      * @param email the email address of the user whose orders to retrieve
      * @return ResponseEntity containing the list of orders or error message
      */
+    @Operation(
+        summary = "Get orders by user",
+        description = "Retrieves all orders for a specific user (Admin only)"
+    )
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Orders retrieved"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+    })
     @GetMapping("/user/{email}")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<ApiResponse<List<OrderResponse>>> getOrdersByUser(@PathVariable String email) {
+    public ResponseEntity<ApiResponse<List<OrderResponse>>> getOrdersByUser(
+            @Parameter(description = "User email") @PathVariable String email) {
         log.info("Get orders request received for user email: {}", email);
 
         try {
@@ -207,6 +250,14 @@ public class OrderController {
      * 
      * @return ResponseEntity containing the list of all orders or error message
      */
+    @Operation(
+        summary = "Get all orders",
+        description = "Retrieves all orders in the system (Admin only)"
+    )
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Orders retrieved"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+    })
     @GetMapping("/all")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<List<OrderResponse>>> getAllOrders() {
