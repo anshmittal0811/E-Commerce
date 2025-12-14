@@ -11,13 +11,43 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import com.shopping_service_api.filter.HeaderAuthenticationFilter;
 
+/**
+ * Security configuration for the Shopping Service API.
+ * 
+ * <p>This configuration class sets up Spring Security with:
+ * <ul>
+ *   <li>CSRF protection disabled (for REST API usage)</li>
+ *   <li>Header-based authentication via custom filter</li>
+ *   <li>Method-level security enabled for role-based access control</li>
+ * </ul>
+ * 
+ * <p>All requests require authentication. User identity is extracted
+ * from HTTP headers set by the API Gateway.
+ */
 @Configuration
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    /**
+     * Custom authentication filter that extracts user credentials from HTTP headers.
+     */
     private final HeaderAuthenticationFilter headerAuthenticationFilter;
 
+    /**
+     * Configures the security filter chain for HTTP requests.
+     * 
+     * <p>This configuration:
+     * <ul>
+     *   <li>Disables CSRF protection for stateless REST API</li>
+     *   <li>Requires authentication for all requests</li>
+     *   <li>Adds custom header authentication filter before username/password filter</li>
+     * </ul>
+     * 
+     * @param http the HttpSecurity object to configure
+     * @return the configured SecurityFilterChain
+     * @throws Exception if an error occurs during configuration
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
@@ -26,6 +56,7 @@ public class SecurityConfig {
             );
 
         http.addFilterBefore(headerAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 
