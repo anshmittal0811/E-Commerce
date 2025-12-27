@@ -67,14 +67,14 @@ The platform follows a microservices architecture with the following patterns:
 ```
 e_commerce/
 ├── backend/                    # Backend microservices
-│   ├── auth-service-api/       # Authentication & user management
-│   ├── eureka-service-api/     # Service discovery server
-│   ├── gateway-service-api/    # API Gateway with JWT auth
-│   ├── notification-service-api/ # Email/SMS notifications
-│   ├── order-service-api/      # Order management
-│   ├── payment-service-api/    # Payment processing
-│   ├── product-service-api/    # Product catalog
-│   ├── shopping-service-api/   # Shopping cart
+│   ├── auth-service/       # Authentication & user management
+│   ├── eureka-service/     # Service discovery server
+│   ├── gateway-service/    # API Gateway with JWT auth
+│   ├── notification-service/ # Email/SMS notifications
+│   ├── order-service/      # Order management
+│   ├── payment-service/    # Payment processing
+│   ├── product-service/    # Product catalog
+│   ├── shopping-service/   # Shopping cart
 │   ├── docker-compose.yml      # Docker orchestration
 │   └── pom.xml                 # Parent Maven POM
 ├── frontend/                   # React frontend
