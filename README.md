@@ -341,7 +341,3 @@ Individual service API docs:
 - Order Service: `/v3/api-docs/order`
 - Payment Service: `/v3/api-docs/payment`
 - Notification Service: `/v3/api-docs/notification`
-
-## License
-
-This project is licensed under the MIT License.
